@@ -49,5 +49,29 @@
     <Resource Include="Unicode\Resources\UnicodeCategory.trie" />
   </ItemGroup>
 
+  <PropertyGroup Label="MacNative">
+    <MacNativeLibraryName>lib$(AssemblyName).Native.dylib</MacNativeLibraryName>
+    <MacNativeCompilerFlags>-dynamiclib -framework CoreFoundation -framework CoreText -fobjc-arc -mmacosx-version-min=10.13 -Wall -Wextra -Werror -install_name @rpath/$(MacNativeLibraryName)</MacNativeCompilerFlags>
+    <MacNativeCompilerFlags Condition="$(Configuration) == 'Debug'">$(MacNativeCompilerFlags) -Og</MacNativeCompilerFlags>
+    <MacNativeCompilerFlags Condition="$(Configuration) != 'Debug'">$(MacNativeCompilerFlags) -Os -arch x86_64 -arch arm64</MacNativeCompilerFlags>
+  </PropertyGroup>
+
+  <ItemGroup Label="MacNative">
+    <None Remove="Native/MacSystemFonts.m" />
+    <MacNativeSource Include="Native/MacSystemFonts.m" />
+    <MacNativeLibrary Include="$(IntermediateOutputPath)$(MacNativeLibraryName)" Visible="false" />
+  </ItemGroup>
+
+  <ItemGroup Label="Packaging">
+    <None Include="$(IntermediateOutputPath)/netstandard2.1/$(MacNativeLibraryName)" Pack="true" PackagePath="runtimes/osx/native" Visible="false" />
+  </ItemGroup>
+
+  <Target Name="CompileMacNativeLibrary" AfterTargets="PrepareForBuild" Inputs="@(MacNativeSource)" Outputs="@(MacNativeLibrary)" Condition="$([MSBuild]::IsOSPlatform('macOS'))">
+    <Exec Command="clang @(MacNativeSource) $(MacNativeCompilerFlags) -o @(MacNativeLibrary)" />
+    <ItemGroup>
+      <FileWrites Include="@(MacNativeLibrary)" />
+    </ItemGroup>
+  </Target>
+
   <Import Project="..\..\shared-infrastructure\src\SharedInfrastructure\SharedInfrastructure.projitems" Label="Shared" />
 </Project>
